@@ -1,0 +1,556 @@
+Title : Study and Implementation of Depth
+first search for problem solving. 
+
+Code :
+
+#include<stdio.h>
+#include<stdlib.h>
+int graph[10][10], visited[10],total,arr[30];
+static int k=0,count=0;
+void DFS(int);
+main()
+{
+	int i,j;
+	printf("\nEnter the total number of vertices in graph\n");
+	scanf("%d",&total);
+	/*Adjacency matrix input*/
+	printf("\nEnter the adjacency matrix\n");
+	for(i=0;i<total;i++)
+	{
+		for(j=0;j<total;j++)
+		{
+			scanf("%d",&graph[i][j]);
+		}
+	}
+	for(i=0;i<total;i++)
+	{
+		visited[i] = 0;
+	}
+	printf("\nDFS traversal is \n");
+	DFS(0);
+}
+void DFS(int vertex)
+{
+	int j,c=0;
+	count++;
+	printf("%d\t",vertex);
+	visited[vertex] = 1;
+	for(j=0;j<total;j++)
+	{
+		if(!visited[j] && graph[vertex][j] == 1)
+		{
+			arr[++k] = j;
+			c=1;
+		}
+		if(count == total)
+		{
+			exit(0);
+		}
+	}
+	if(c==1)
+	{
+		DFS(arr[k]);
+	}
+	else
+	{
+		k--;
+		DFS(arr[k]);
+	}	
+}
+
+
+Output : 
+
+Enter the total number of vertices in graph : 5
+
+Enter the adjacency matrix :
+
+0  1  0  0  1
+0  0  1  1  0
+0  0  0  1  0
+0  0  0  0  1
+0  1  0  0  0
+
+DFS Traversal Is :
+
+0       4       1       3       2
+
+
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Title : Study and Implementation of
+Breadth first search for problem
+solving. 
+
+Code :
+
+#include<stdio.h>
+void BFS(int);
+int graph[10][10], visited[10],total;
+main()
+{
+	int i,j;
+	printf("\nEnter the total number of vertices in graph\n");
+	scanf("%d",&total);
+	/*Adjacency matrix input*/
+	printf("\nEnter the adjacency matrix\n");
+	for(i=0;i<total;i++)
+	{
+		for(j=0;j<total;j++)
+		{
+			scanf("%d",&graph[i][j]);
+		}
+	}
+	for(i=0;i<total;i++)
+	{
+		visited[i] = 0;
+	}
+	printf("\nBFS traversal is \n");
+	BFS(0);
+}
+void BFS(int vertex)
+{
+	int j;
+	printf("%d\t",vertex);
+	visited[vertex] = 1;
+	for(j=0;j<total;j++)
+	{
+		if(!visited[j] && graph[vertex][j] == 1 )
+		{
+			BFS(j);
+		}
+	}
+}
+
+Output : 
+
+Enter the total number of vertices in graph : 5
+
+Enter the adjacency matrix :
+
+0  1  0  0  1
+0  0  1  1  0
+0  0  0  1  0
+0  0  0  0  1
+0  1  0  0  0
+
+BFS traversal is :
+
+0       1       2       3       4
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Title : Study and Implementation of
+Breadth first search for problem
+solving.
+
+
+Title :
+Study and Implementation of
+Informed search method: A* Search
+algorithm
+
+Code :
+
+tree = {'S': [['A', 1], ['B', 5], ['C', 8]],
+        'A': [['S', 1], ['D', 3], ['E', 7], ['G', 9]],
+        'B': [['S', 5], ['G', 4]],
+        'C': [['S', 8], ['G', 5]],
+        'D': [['A', 3]],
+        'E': [['A', 7]]}
+
+heuristic = {'S': 8, 'A': 8, 'B': 4, 'C': 3, 'D': 5000, 'E': 5000, 'G': 0}
+cost = {'S': 0}             
+
+def AStarSearch():
+    global tree, heuristic
+    closed = []             
+    opened = [['S', 8]]    
+
+    while True:
+        fn = [i[1] for i in opened]     # fn = f(n) = g(n) + h(n)
+        chosen_index = fn.index(min(fn))
+        node = opened[chosen_index][0]  # current node
+        closed.append(opened[chosen_index])
+        del opened[chosen_index]
+        if closed[-1][0] == 'G':       
+            break
+        for item in tree[node]:
+            if item[0] in [closed_item[0] for closed_item in closed]:
+                continue
+            cost.update({item[0]: cost[node] + item[1]})          
+            fn_node = cost[node] + heuristic[item[0]] + item[1]     
+            temp = [item[0], fn_node]
+            opened.append(temp)                                   
+
+    trace_node = 'G'                        
+    optimal_sequence = ['G']             
+    for i in range(len(closed)-2, -1, -1):
+        check_node = closed[i][0]           
+        if trace_node in [children[0] for children in tree[check_node]]:
+            children_costs = [temp[1] for temp in tree[check_node]]
+            children_nodes = [temp[0] for temp in tree[check_node]]
+
+            if cost[check_node] + children_costs[children_nodes.index(trace_node)] == cost[trace_node]:
+                optimal_sequence.append(check_node)
+                trace_node = check_node
+    optimal_sequence.reverse()              
+    return closed, optimal_sequence
+
+if __name__ == '__main__':
+    visited_nodes, optimal_nodes = AStarSearch()
+    print(' ---> ' + str(visited_nodes))
+    print(' Optimal Searching Path :  ' + str(optimal_nodes))
+
+Output :
+
+Optimal Searching Path : 
+
+S ---> B ---> G
+
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Title :
+Study and Implementation of MinMax algorithm.
+
+Code :
+
+#include <stdio.h>
+char gridChar(int i) {
+    switch(i) {
+        case -1:
+            return 'X';
+        case 0:
+            return ' ';
+        case 1:
+            return 'O';
+    }
+}
+
+void draw(int b[9]) {
+    printf(" %c | %c | %c\n",gridChar(b[0]),gridChar(b[1]),gridChar(b[2]));
+    printf("---+---+---\n");
+    printf(" %c | %c | %c\n",gridChar(b[3]),gridChar(b[4]),gridChar(b[5]));
+    printf("---+---+---\n");
+    printf(" %c | %c | %c\n",gridChar(b[6]),gridChar(b[7]),gridChar(b[8]));
+}
+
+int win(const int board[9]) {
+    unsigned wins[8][3] = {{0,1,2},{3,4,5},{6,7,8},{0,3,6},{1,4,7},{2,5,8},{0,4,8},{2,4,6}};
+    int i;
+    for(i = 0; i < 8; ++i) {
+        if(board[wins[i][0]] != 0 &&
+           board[wins[i][0]] == board[wins[i][1]] &&
+           board[wins[i][0]] == board[wins[i][2]])
+            return board[wins[i][2]];
+    }
+    return 0;
+}
+
+int minimax(int board[9], int player) {
+    int winner = win(board);
+    if(winner != 0) return winner*player;
+    int move = -1;
+    int score = -2;
+    int i;
+    for(i = 0; i < 9; ++i) {
+        if(board[i] == 0) {
+            board[i] = player;
+            int thisScore = -minimax(board, player*-1);
+            if(thisScore > score) {
+                score = thisScore;
+                move = i;
+            }
+            board[i] = 0;
+        }
+    }
+    if(move == -1) return 0;
+    return score;
+}
+
+void computerMove(int board[9]) {
+    int move = -1;
+    int score = -2;
+    int i;
+    for(i = 0; i < 9; ++i) {
+        if(board[i] == 0) {
+            board[i] = 1;
+            int tempScore = -minimax(board, -1);
+            board[i] = 0;
+            if(tempScore > score) {
+                score = tempScore;
+                move = i;
+            }
+        }
+    }
+    board[move] = 1;
+}
+
+void playerMove(int board[9]) {
+    int move = 0;
+    do {
+        printf("\nInput move ([0..8]): ");
+        scanf("%d", &move);
+        printf("\n");
+    } while (move >= 9 || move < 0 && board[move] == 0);
+    board[move] = -1;
+}
+
+int main() {
+    int board[9] = {0,0,0,0,0,0,0,0,0};
+    printf("Computer: O, You: X\nPlay (1)st or (2)nd? ");
+    int player=0;
+    scanf("%d",&player);
+    printf("\n");
+    unsigned turn;
+    for(turn = 0; turn < 9 && win(board) == 0; ++turn) {
+        if((turn+player) % 2 == 0)
+            computerMove(board);
+        else {
+            draw(board);
+            playerMove(board);
+        }
+    }
+    switch(win(board)) {
+        case 0:
+            printf("Result : \n A Draw !!\n");
+            break;
+        case 1:
+            draw(board);
+            printf("You Lose.\n");
+            break;
+        case -1:
+            printf("You Win. Inconceivable!\n");
+            break;
+    }
+}
+
+Output :
+
+Computer: O, You: X
+
+Play (1)st or (2)nd : 1
+
+    |   |
+---+---+---
+    |   |
+---+---+---
+    |   |
+
+Input move ([0..8]): 0
+
+  X |   |
+---+---+---
+    | O |
+---+---+---
+    |   |
+
+Input move ([0..8]): 2
+
+ X | O | X
+---+---+---
+   | O |
+---+---+---
+    |   |
+
+Input move ([0..8]): 7
+
+ X | O | X
+---+---+---
+ O | O |
+---+---+---
+    | X |
+
+Input move ([0..8]): 5
+
+ X | O | X
+---+---+---
+ O | O | X
+---+---+---
+   | X | O
+
+Input move ([0..8]): 6
+
+Result :
+A Draw !!
+
+
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Title :
+Study and create knowledge base in
+Prolog.
+
+Code :
+
+move(1, A, B,_) :-  
+    write('move top disk from'),  
+write(A),  
+write(' to '),  
+write(B),  
+p1.  
+move(P, A, B, C) :-  
+    P>1,  
+    S is P-1,  
+    move(S, A, B, C),  
+    move(1, A, B,_),  
+    move(S, C, B, A).  
+
+Output :
+
+?- move(3, left, right, center).  
+From left to right move top disk   
+From left to center move top disk  
+From right to center move top disk  
+From left to right move top disk  
+From center to left move top disk  
+From center to right move top disk  
+From left to right move top disk  
+  
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Title :
+Study and Implementation of
+unification algorithm in Prolog.
+
+Code :
+
+?- a = a.
+yes
+
+?- a = b.
+no
+
+?- location(apple, kitchen) = 
+location(apple, kitchen).
+yes
+
+?- location(apple, kitchen) = 
+location(pear, kitchen).
+no
+
+?- a(b,c(d,e(f,g))) = a(b,c(d,e(f,g))).
+Yes
+
+?- a(b,c(d,e(f,g))) = a(b,c(d,e(g,f))).
+No
+
+Output :
+
+Yes !!
+
+
+Title :
+Implementation for Bayes Belief
+Network
+
+Code :
+
+import math
+from pomegranate import *
+
+guest =DiscreteDistribution( { 'A': 1./3, 'B': 1./3, 'C': 1./3 } )
+
+prize =DiscreteDistribution( { 'A': 1./3, 'B': 1./3, 'C': 1./3 } )
+
+monty =ConditionalProbabilityTable(
+[[ 'A', 'A', 'A', 0.0 ],
+[ 'A', 'A', 'B', 0.5 ],
+[ 'A', 'A', 'C', 0.5 ],
+[ 'A', 'B', 'A', 0.0 ],
+[ 'A', 'B', 'B', 0.0 ],
+[ 'A', 'B', 'C', 1.0 ],
+[ 'A', 'C', 'A', 0.0 ],
+[ 'A', 'C', 'B', 1.0 ],
+[ 'A', 'C', 'C', 0.0 ],
+[ 'B', 'A', 'A', 0.0 ],
+[ 'B', 'A', 'B', 0.0 ],
+[ 'B', 'A', 'C', 1.0 ],
+[ 'B', 'B', 'A', 0.5 ],
+[ 'B', 'B', 'B', 0.0 ],
+[ 'B', 'B', 'C', 0.5 ],
+[ 'B', 'C', 'A', 1.0 ],
+[ 'B', 'C', 'B', 0.0 ],
+[ 'B', 'C', 'C', 0.0 ],
+[ 'C', 'A', 'A', 0.0 ],
+[ 'C', 'A', 'B', 1.0 ],
+[ 'C', 'A', 'C', 0.0 ],
+[ 'C', 'B', 'A', 1.0 ],
+[ 'C', 'B', 'B', 0.0 ],
+[ 'C', 'B', 'C', 0.0 ],
+[ 'C', 'C', 'A', 0.5 ],
+[ 'C', 'C', 'B', 0.5 ],
+[ 'C', 'C', 'C', 0.0 ]], [guest, prize] )
+
+d1 = State( guest, name="guest" )
+d2 = State( prize, name="prize" )
+d3 = State( monty, name="monty" )
+
+network = BayesianNetwork( "Solving the Monty Hall Problem With Bayesian Networks" )
+network.add_states(d1, d2, d3)
+network.add_edge(d1, d3)
+network.add_edge(d2, d3)
+network.bake()
+
+beliefs = network.predict_proba({ 'guest' : 'A' })
+beliefs = map(str, beliefs)
+print("n".join( "{}t{}".format( state.name, belief ) for state, belief in zip( network.states, beliefs ) ))
+ 
+prize {
+"class" :"Distribution",
+"dtype" :"str",
+"name" :"DiscreteDistribution",
+"parameters" :[
+{
+"A" :0.3333333333333333,
+"B" :0.3333333333333333,
+"C" :0.3333333333333333
+}
+],
+}
+ 
+monty {
+"class" :"Distribution",
+"dtype" :"str",
+"name" :"DiscreteDistribution",
+"parameters" :[
+{
+"C" :0.49999999999999983,
+"A" :0.0,
+"B" :0.49999999999999983
+}
+],
+}
+
+beliefs = network.predict_proba({'guest' : 'A', 'monty' : 'B'})
+print("n".join( "{}t{}".format( state.name, str(belief) ) for state, belief in zip( network.states, beliefs )))
+
+prize {
+"class" :"Distribution",
+"dtype" :"str",
+"name" :"DiscreteDistribution",
+"parameters" :[
+{
+"A" :0.3333333333333334,
+"B" :0.0,
+"C" :0.6666666666666664
+}
+],
+}
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Title :
+Case Study on an Expert System in
+healthcare domain.
+
+
+Title :  Case Study on Natural Language
+Processing applications. 

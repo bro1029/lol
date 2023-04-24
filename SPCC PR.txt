@@ -1,0 +1,926 @@
+Experiment No.1
+
+Title : Design and Implementation of Pass 1 of
+Two Pass Assembler
+
+Code :
+
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+void passOne(char label[10], char opcode[10], char operand[10], char code[10], char mnemonic[3]);
+void display();
+
+int main()
+{
+    char label[10], opcode[10], operand[10];
+    char code[10], mnemonic[3];
+    passOne(label, opcode, operand, code, mnemonic);
+    return 0;
+}
+
+void passOne(char label[10], char opcode[10], char operand[10], char code[10], char mnemonic[3]) 
+{
+    int locctr, start, length;
+    FILE *fp1, *fp2, *fp3, *fp4, *fp5;                               
+    fp1 = fopen("input.txt", "r");
+    fp2 = fopen("optab.txt", "r");
+    fp3 = fopen("symtab.txt", "w");
+    fp4 = fopen("intermediate.txt", "w");
+    fp5 = fopen("length.txt", "w");
+
+    fscanf(fp1, "%s\t%s\t%s", label, opcode, operand);              
+    if (strcmp(opcode, "START") == 0) {                       
+        start = atoi(operand);                                      
+        locctr = start;
+        fprintf(fp4, "\t%s\t%s\t%s\n", label, opcode, operand);     
+        fscanf(fp1, "%s\t%s\t%s", label, opcode, operand);         
+    } 
+    else {
+        locctr = 0;
+    }
+
+    while (strcmp(opcode, "END") != 0) {
+        fprintf(fp4, "%d\t%s\t%s\t%s\n", locctr, label, opcode, operand);
+        if (strcmp(label, "**") != 0) {
+            fprintf(fp3, "%s\t%d\n", label, locctr);
+        }
+        fscanf(fp2, "%s\t%s", code, mnemonic);
+        while (strcmp(code, "END") != 0) {
+            if (strcmp(opcode, code) == 0) {                   
+                locctr += 3;
+                break;
+            }
+            fscanf(fp2, "%s\t%s", code, mnemonic);
+        }
+        if (strcmp(opcode, "WORD") == 0) {
+            locctr += 3;
+        }
+            else if (strcmp(opcode, "RESW") == 0) {
+            locctr += (3 * (atoi(operand)));                    
+        }
+        else if (strcmp(opcode, "BYTE") == 0) {
+            ++locctr;
+        }
+        else if (strcmp(opcode, "RESB") == 0) {
+            locctr += atoi(operand);
+        }
+        fscanf(fp1, "%s\t%s\t%s", label, opcode, operand);
+    }
+    fprintf(fp4, "%d\t%s\t%s\t%s\n", locctr, label, opcode, operand);
+    fclose(fp4);
+    fclose(fp3);
+    fclose(fp2);
+    fclose(fp1);
+    display();
+    length = locctr - start;
+    fprintf(fp5, "%d", length);
+    fclose(fp5);
+    printf("\nThe length of the code : %d\n", length);
+}
+
+void display() {
+
+    char str;
+    FILE *fp1, *fp2, *fp3;   
+    printf("\nThe contents of Input Table :\n\n");
+    fp1 = fopen("input.txt", "r");
+    str = fgetc(fp1);
+    while (str != EOF) {
+        printf("%c", str);
+        str = fgetc(fp1);
+    }
+    fclose(fp1);
+    printf("\n\nThe contents of Output Table :\n\n");
+    fp2 = fopen("intermediate.txt", "r");
+    str = fgetc(fp2);
+    while (str != EOF) {
+        printf("%c", str);
+        str = fgetc(fp2);
+    }
+    fclose(fp2);
+    printf("\n\nThe contents of Symbol Table :\n\n");
+    fp3 = fopen("symtab.txt", "r");
+    str = fgetc(fp3);
+    while (str != EOF) {
+        printf("%c", str);
+        str = fgetc(fp3);
+    }
+    fclose(fp3);
+}
+
+
+//---------------------------------------------------------------------------------------------------------
+
+Experiment No.2
+Title : Design and Implementation of Pass 2 of
+Two Pass Assembler
+
+Code :
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+void display();
+
+int main()
+{
+    char a[10], ad[10], label[10], opcode[10], operand[10], symbol[10];
+    int start, diff, i, address, add, len, actual_len, finaddr, prevaddr, j = 0;
+    char mnemonic[15][15] = {"LDA", "STA", "LDCH", "STCH"};
+    char code[15][15] = {"33", "44", "53", "57"};
+
+    FILE *fp1, *fp2, *fp3, *fp4;
+    fp1 = fopen("output.txt", "w");
+    fp2 = fopen("symtab.txt", "r");
+    fp3 = fopen("intermediate.txt", "r");
+    fp4 = fopen("objcode.txt", "w");
+
+    fscanf(fp3, "%s\t%s\t%s", label, opcode, operand);
+
+    while (strcmp(opcode, "END") != 0)
+    {
+        prevaddr = address;
+        fscanf(fp3, "%d%s%s%s", &address, label, opcode, operand);
+    }
+    finaddr = address;
+    
+    fclose(fp3);
+    fp3 = fopen("intermediate.txt", "r");
+
+    fscanf(fp3, "\t%s\t%s\t%s", label, opcode, operand);
+    if (strcmp(opcode, "START") == 0)
+    {
+        fprintf(fp1, "\t%s\t%s\t%s\n", label, opcode, operand);
+        fprintf(fp4, "H^%s^00%s^00%d\n", label, operand, finaddr);
+        fscanf(fp3, "%d%s%s%s", &address, label, opcode, operand);
+        start = address;
+        diff = prevaddr - start;
+        fprintf(fp4, "T^00%d^%d", address, diff);
+    }
+
+    while (strcmp(opcode, "END") != 0)
+    {
+        if (strcmp(opcode, "BYTE") == 0)
+        {
+            fprintf(fp1, "%d\t%s\t%s\t%s\t", address, label, opcode, operand);
+            len = strlen(operand);
+            actual_len = len - 3;
+            fprintf(fp4, "^");
+            for (i = 2; i < (actual_len + 2); i++)
+            {   
+                itoa(operand[i], ad, 16);
+                fprintf(fp1, "%s", ad);
+                fprintf(fp4, "%s", ad);
+            }
+            fprintf(fp1, "\n");
+        }
+
+        else if (strcmp(opcode, "WORD") == 0)
+        {
+            len = strlen(operand);
+            itoa(atoi(operand), a, 10);
+            fprintf(fp1, "%d\t%s\t%s\t%s\t00000%s\n", address, label, opcode, operand, a);
+            fprintf(fp4, "^00000%s", a);
+        }
+
+        else if ((strcmp(opcode, "RESB") == 0) || (strcmp(opcode, "RESW") == 0)) {
+            fprintf(fp1, "%d\t%s\t%s\t%s\n", address, label, opcode, operand);
+        }
+
+        else
+        {
+            while (strcmp(opcode, mnemonic[j]) != 0)
+                j++;
+            if (strcmp(operand, "COPY") == 0)
+                fprintf(fp1, "%d\t%s\t%s\t%s\t%s0000\n", address, label, opcode, operand, code[j]);
+            else
+            {
+                rewind(fp2);
+                fscanf(fp2, "%s%d", symbol, &add);
+                while (strcmp(operand, symbol) != 0)
+                    fscanf(fp2, "%s%d", symbol, &add);
+                fprintf(fp1, "%d\t%s\t%s\t%s\t%s%d\n", address, label, opcode, operand, code[j], add);
+                fprintf(fp4, "^%s%d", code[j], add);
+            }
+        }
+
+        fscanf(fp3, "%d%s%s%s", &address, label, opcode, operand);
+    }
+
+    fprintf(fp1, "%d\t%s\t%s\t%s\n", address, label, opcode, operand);
+    fprintf(fp4, "\nE^00%d", start);
+    
+    fclose(fp4);
+    fclose(fp3);
+    fclose(fp2);
+    fclose(fp1);
+
+    display();
+
+    return 0;
+}
+
+void display() {
+    char ch;
+    FILE *fp1, *fp2, *fp3, *fp4;
+
+    printf("\nIntermediate file is converted into object code");
+
+    printf("\n\nThe contents of Intermediate file:\n\n");
+    fp3 = fopen("intermediate.txt", "r");
+    ch = fgetc(fp3);
+    while (ch != EOF)
+    {
+        printf("%c", ch);
+        ch = fgetc(fp3);
+    }
+    fclose(fp3);
+
+    printf("\n\nThe contents of Symbol Table :\n\n");
+    fp2 = fopen("symtab.txt", "r");
+    ch = fgetc(fp2);
+    while (ch != EOF)
+    {
+        printf("%c", ch);
+        ch = fgetc(fp2);
+    }
+    fclose(fp2);
+
+    printf("\n\nThe contents of Output file :\n\n");
+    fp1 = fopen("output.txt", "r");
+    ch = fgetc(fp1);
+    while (ch != EOF)
+    {
+        printf("%c", ch);
+        ch = fgetc(fp1);
+    }
+    fclose(fp1);
+
+    printf("\n\nThe contents of Object code file :\n\n");
+    fp4 = fopen("objcode.txt", "r");
+    ch = fgetc(fp4);
+    while (ch != EOF)
+    {
+        printf("%c", ch);
+        ch = fgetc(fp4);
+    }
+    fclose(fp4);
+
+}
+
+
+//---------------------------------------------------------------------------------------------------------
+
+Experiment N0.3
+Title : Design and Implementation of Pass 1 of
+Two Pass Macro Processor
+
+Code :
+
+#include<stdio.h>
+#include<conio.h>
+#include<string.h>
+#include<stdlib.h>
+void main()
+{
+FILE *f1,*f2,*f3;
+char mne[20],opnd[20],la[20];
+clrscr();
+f1=fopen("minp2.txt","r");
+f2=fopen("ntab2.txt","w+");
+f3=fopen("dtab2.txt","w+");
+fscanf(f1,"%s%s%s",la,mne,opnd);
+while(strcmp(mne,"MEND")!=0)
+{
+if(strcmp(mne,"MACRO")==0)
+{
+fprintf(f2,"%s\n",la);
+fprintf(f3,"%s\t%s\n",la,opnd);
+}
+else
+fprintf(f3,"%s\t%s\n",mne,opnd);
+fscanf(f1,"%s%s%s",la,mne,opnd);
+}
+fprintf(f3,"%s",mne);
+fclose(f1);
+fclose(f2);
+fclose(f3);
+printf("PASS 1 is successful");
+getch();
+}
+ 
+
+
+//---------------------------------------------------------------------------------------------------------
+
+Experiment No.4
+Title : Design and Implementation of Pass 2 of Two Pass Macro Processor
+
+Code :
+
+#include<stdio.h>
+#include<conio.h>
+#include<string.h>
+#include<stdlib.h>
+void main()
+{
+FILE *f1,*f2,*f3,*f4,*f5;
+int i,len;
+char mne[20],opnd[20],la[20],name[20],mne1[20],opnd1[20],arg[20];
+clrscr();
+f1=fopen("minp2.txt","r");
+f2=fopen("ntab2.txt","r");
+f3=fopen("dtab2.txt","r");
+f4=fopen("atab2.txt","w+");
+f5=fopen("op2.txt","w");
+fscanf(f1,"%s%s%s",la,mne,opnd);
+while(strcmp(mne,"END")!=0)
+{
+if(strcmp(mne,"MACRO")==0)
+{
+fscanf(f1,"%s%s%s",la,mne,opnd);
+while(strcmp(mne,"MEND")!=0)
+fscanf(f1,"%s%s%s",la,mne,opnd);
+}
+else
+{
+fscanf(f2,"%s",name);
+if(strcmp(mne,name)==0)
+{
+len=strlen(opnd);
+for(i=0;i<len;i++)
+{
+if(opnd[i]!=',')
+fprintf(f4,"%c",opnd[i]);
+else
+fprintf(f4,"\n");
+}
+fseek(f2,SEEK_SET,0);
+fseek(f4,SEEK_SET,0);
+fscanf(f3,"%s%s",mne1,opnd1);
+fprintf(f5,".\t%s\t%s\n",mne1,opnd);
+fscanf(f3,"%s%s",mne1,opnd1);
+while(strcmp(mne1,"MEND")!=0)
+{
+if((opnd1[0]=='&'))
+{
+fscanf(f4,"%s",arg);
+fprintf(f5,"-\t%s\t%s\n",mne1,arg);
+}
+else
+fprintf(f5,"-\t%s\t%s\n",mne1,opnd1);
+fscanf(f3,"%s%s",mne1,opnd1);
+}
+}
+else
+fprintf(f5,"%s\t%s\t%s\n",la,mne,opnd);
+}
+fscanf(f1,"%s%s%s",la,mne,opnd);
+}
+fprintf(f5,"%s\t%s\t%s\n",la,mne,opnd);
+fclose(f1);
+fclose(f2);
+fclose(f3);
+fclose(f4);
+fclose(f5);
+printf("pass2");
+getch();
+}
+ 
+
+//---------------------------------------------------------------------------------------------------------
+
+Experiment No. 5
+Title : Study and Implementation of Lexical
+Analyzer.
+
+Code :
+
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+bool isValidDelimiter(char ch) {
+   if (ch == ' ' || ch == '+' || ch == '-' || ch == '*' ||
+   ch == '/' || ch == ',' || ch == ';' || ch == '>' ||
+   ch == '<' || ch == '=' || ch == '(' || ch == ')' ||
+   ch == '[' || ch == ']' || ch == '{' || ch == '}')
+   return (true);
+   return (false);
+}
+bool isValidOperator(char ch){
+   if (ch == '+' || ch == '-' || ch == '*' ||
+   ch == '/' || ch == '>' || ch == '<' ||
+   ch == '=')
+   return (true);
+   return (false);
+}
+// Returns 'true' if the string is a VALID IDENTIFIER.
+bool isvalidIdentifier(char* str){
+   if (str[0] == '0' || str[0] == '1' || str[0] == '2' ||
+   str[0] == '3' || str[0] == '4' || str[0] == '5' ||
+   str[0] == '6' || str[0] == '7' || str[0] == '8' ||
+   str[0] == '9' || isValidDelimiter(str[0]) == true)
+   return (false);
+   return (true);
+}
+bool isValidKeyword(char* str) {
+   if (!strcmp(str, "if") || !strcmp(str, "else") || !strcmp(str, "while") || !strcmp(str, "do") ||    !strcmp(str, "break") || !strcmp(str, "continue") || !strcmp(str, "int")
+   || !strcmp(str, "double") || !strcmp(str, "float") || !strcmp(str, "return") || !strcmp(str,    "char") || !strcmp(str, "case") || !strcmp(str, "char")
+   || !strcmp(str, "sizeof") || !strcmp(str, "long") || !strcmp(str, "short") || !strcmp(str, "typedef") || !strcmp(str, "switch") || !strcmp(str, "unsigned")
+   || !strcmp(str, "void") || !strcmp(str, "static") || !strcmp(str, "struct") || !strcmp(str, "goto"))
+   return (true);
+   return (false);
+}
+bool isValidInteger(char* str) {
+   int i, len = strlen(str);
+   if (len == 0)
+   return (false);
+   for (i = 0; i < len; i++) {
+      if (str[i] != '0' && str[i] != '1' && str[i] != '2'&& str[i] != '3' && str[i] != '4' && str[i] != '5'
+      && str[i] != '6' && str[i] != '7' && str[i] != '8' && str[i] != '9' || (str[i] == '-' && i > 0))
+      return (false);
+   }
+   return (true);
+}
+bool isRealNumber(char* str) {
+   int i, len = strlen(str);
+   bool hasDecimal = false;
+   if (len == 0)
+   return (false);
+   for (i = 0; i < len; i++) {
+      if (str[i] != '0' && str[i] != '1' && str[i] != '2' && str[i] != '3' && str[i] != '4' && str[i]       != '5' && str[i] != '6' && str[i] != '7' && str[i] != '8'
+      && str[i] != '9' && str[i] != '.' || (str[i] == '-' && i > 0))
+      return (false);
+         if (str[i] == '.')
+      hasDecimal = true;
+   }
+   return (hasDecimal);
+}
+char* subString(char* str, int left, int right) {
+   int i;
+   char* subStr = (char*)malloc( sizeof(char) * (right - left + 2));
+   for (i = left; i <= right; i++)
+      subStr[i - left] = str[i];
+   subStr[right - left + 1] = '\0';
+   return (subStr);
+}
+void detectTokens(char* str) {
+   int left = 0, right = 0;
+   int length = strlen(str);
+   while (right <= length && left <= right) {
+      if (isValidDelimiter(str[right]) == false)
+      right++;
+      if (isValidDelimiter(str[right]) == true && left == right) {
+         if (isValidOperator(str[right]) == true)
+         printf("Valid operator : '%c'
+", str[right]);
+         right++;
+         left = right;
+      } else if (isValidDelimiter(str[right]) == true && left != right || (right == length && left !=       right)) {
+         char* subStr = subString(str, left, right - 1);
+         if (isValidKeyword(subStr) == true)
+            printf("Valid keyword : '%s'
+", subStr);
+         else if (isValidInteger(subStr) == true)
+            printf("Valid Integer : '%s'
+", subStr);
+         else if (isRealNumber(subStr) == true)
+            printf("Real Number : '%s'
+", subStr);
+         else if (isvalidIdentifier(subStr) == true
+            && isValidDelimiter(str[right - 1]) == false)
+         printf("Valid Identifier : '%s'
+", subStr);
+         else if (isvalidIdentifier(subStr) == false
+            && isValidDelimiter(str[right - 1]) == false)
+         printf("Invalid Identifier : '%s'
+", subStr);
+         left = right;
+      }
+   }
+   return;
+}
+int main(){
+   char str[100] = "float x = a + 1b; ";
+   printf("The Program is : '%s' 
+", str);
+   printf("All Tokens are : 
+");
+   detectTokens(str);
+   return (0);
+}
+
+
+//---------------------------------------------------------------------------------------------------------
+
+Experiment No.6
+Title : Implementation of Shift Reduce Parser.
+(Bottom Up Parser).
+
+Code :
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+
+int z = 0, i = 0, j = 0, c = 0;
+char a[16], ac[20], stk[15], act[10];
+void check()
+{
+	strcpy(ac,"REDUCE TO E -> ");
+	for(z = 0; z < c; z++)
+	{
+		if(stk[z] == '4')
+		{
+			printf("%s4", ac);
+			stk[z] = 'E';
+			stk[z + 1] = '\0';
+			printf("\n$%s\t%s$\t", stk, a);
+		}
+	}
+		
+	for(z = 0; z < c - 2; z++)
+	{
+		if(stk[z] == '2' && stk[z + 1] == 'E' && stk[z + 2] == '2')
+		{
+			printf("%s2E2", ac);
+			stk[z] = 'E';
+			stk[z + 1] = '\0';
+			stk[z + 2] = '\0';
+			printf("\n$%s\t%s$\t", stk, a);
+			i = i - 2;
+		}
+	}
+		
+	for(z=0; z<c-2; z++)
+	{
+		if(stk[z] == '3' && stk[z + 1] == 'E' && stk[z + 2] == '3')
+		{
+			printf("%s3E3", ac);
+			stk[z]='E';
+			stk[z + 1]='\0';
+			stk[z + 1]='\0';
+			printf("\n$%s\t%s$\t", stk, a);
+			i = i - 2;
+		}
+	}
+	return ; 
+}
+
+int main()
+{
+	printf("Grammer is -\nE->2E2 \nE->3E3 \nE->4\n");
+	strcpy(a,"32423");
+	c=strlen(a);
+	strcpy(act,"SHIFT");
+	printf("\nStack \t Input \t Action");
+	printf("\n$\t%s$\t", a);
+
+	for(i = 0; j < c; i++, j++)
+	{
+		printf("%s", act);
+		stk[i] = a[j];	
+		stk[i + 1] = '\0';
+		a[j]=' ';
+		printf("\n$%s\t%s$\t", stk, a);
+		check();
+	}
+	check();
+	if(stk[0] == 'E' && stk[1] == '\0')
+		printf("Accept\n");
+	else 
+		printf("Reject\n");
+}
+
+
+//---------------------------------------------------------------------------------------------------------
+
+Experiment No.7
+Title : Implementation of Intermediate code
+generation phase of compiler.
+
+Code :
+
+#include<stdio.h>
+#include<conio.h>
+#include<string.h>
+
+int i=1,j=0,no=0,tmpch=90;
+char str[100],left[15],right[15];
+void findopr();
+void explore();
+void fleft(int);
+void fright(int);
+struct exp
+{
+int pos;
+char op;
+}k[15];
+
+void main()
+{
+printf("\t\tINTERMEDIATE CODE GENERATION\n\n");
+printf("Enter the Expression :");
+scanf("%s",str);
+printf("The intermediate code:\n");
+findopr();
+explore();
+}
+
+void findopr()
+{
+for(i=0;str[i]!='\0';i++)
+if(str[i]==':')
+{
+k[j].pos=i;
+k[j++].op=':';
+}
+
+for(i=0;str[i]!='\0';i++)
+if(str[i]=='/')
+{
+k[j].pos=i;
+k[j++].op='/';
+}
+
+for(i=0;str[i]!='\0';i++)
+if(str[i]=='*')
+{
+k[j].pos=i;
+k[j++].op='*';
+}
+
+for(i=0;str[i]!='\0';i++)
+if(str[i]=='+')
+{
+k[j].pos=i;
+k[j++].op='+';
+}
+
+for(i=0;str[i]!='\0';i++)
+if(str[i]=='-')
+{
+k[j].pos=i;
+k[j++].op='-';
+}
+}
+
+void explore()
+{
+i=1;
+while(k[i].op!='\0')
+{
+fleft(k[i].pos);
+fright(k[i].pos);
+str[k[i].pos]=tmpch--;
+printf("\t%c := %s%c%s\t\t",str[k[i].pos],left,k[i].op,right);
+printf("\n");
+i++;
+}
+fright(-1);
+if(no==0)
+{
+fleft(strlen(str));
+printf("\t%s := %s",right,left);
+getch();
+exit(0);
+}
+printf("\t%s := %c",right,str[k[--i].pos]);
+getch();
+}
+
+void fleft(int x)
+{
+int w=0,flag=0;
+x--;
+while(x!= -1 &&str[x]!= '+' &&str[x]!='*'&&str[x]!='='&&str[x]!='\0'&&str[x]!='-'&&str[x]!='/'&&str[x]!=':')
+{
+if(str[x]!='$'&& flag==0)
+{
+left[w++]=str[x];
+left[w]='\0';
+str[x]='$';
+flag=1;
+}
+x--;
+}
+}
+
+void fright(int x)
+{
+int w=0,flag=0;
+x++;
+while(x!= -1 && str[x]!= '+'&&str[x]!='*'&&str[x]!='\0'&&str[x]!='='&&str[x]!=':'&&str[x]!='-'&&str[x]!='/')
+{
+if(str[x]!='$'&& flag==0)
+{
+right[w++]=str[x];
+right[w]='\0';
+str[x]='$';
+flag=1;
+}
+x++;
+}
+}
+
+
+//---------------------------------------------------------------------------------------------------------
+
+Experiment No. 8
+Title : Implementation of code optimization
+phase of compiler.
+
+Code :
+
+1. Code Motion or Frequency Reduction :
+ 
+a = 200;
+while(a>0)
+{
+	b = x + y;
+	if (a % b == 0)
+	printf(“%d”, a);
+}
+
+
+//This code can be further optimized as
+a = 200;
+b = x + y;
+while(a>0)
+{
+	if (a % b == 0}
+	printf(“%d”, a);
+}
+
+2. Loop Jamming :
+
+ // Before loop jamming
+for(int k=0;k<10;k++)
+{
+x = k*2;
+}
+
+for(int k=0;k<10;k++)
+{
+y = k+3;
+}
+
+//After loop jamming
+for(int k=0;k<10;k++)
+{
+x = k*2;
+y = k+3;
+}
+
+3. Loop Unrolling : 
+
+//Before Loop Unrolling
+
+for(int i=0;i<2;i++)
+{
+printf("Hello");
+}
+
+//After Loop Unrolling
+
+printf("Hello");
+printf("Hello");
+
+
+//---------------------------------------------------------------------------------------------------------
+
+Experiment No.9
+Title : Study and implementation of lexical
+Analyzer using LEX Tool.
+
+Code :
+
+lexp.l
+%{
+/* program to recognize a c program */
+int COMMENT=0;
+int cnt=0;
+%}
+identifier [a-zA-Z][a-zA-Z0-9]*
+%%
+#.* { printf("\n%s is a PREPROCESSOR DIRECTIVE",yytext);}
+int |
+float |
+char |
+double |
+while |
+for |
+do |
+if |
+break |
+continue |
+void |
+switch |
+case |
+long |
+struct |
+const |
+typedef |
+return |
+else |
+goto {printf("\n\t%s is a KEYWORD",yytext);}
+"/*" {COMMENT = 1;}
+"*/" {COMMENT = 0; cnt++;}
+{identifier}\( {if(!COMMENT)printf("\n\nFUNCTION\n\t%s",yytext);}
+\{ {if(!COMMENT) printf("\n BLOCK BEGINS");}
+\} {if(!COMMENT) printf("\n BLOCK ENDS");}
+{identifier}(\[[0-9]*\])? {if(!COMMENT) printf("\n %s IDENTIFIER",yytext);}
+\".*\" {if(!COMMENT) printf("\n\t%s is a STRING",yytext);}
+[0-9]+ {if(!COMMENT) printf("\n\t%s is a NUMBER",yytext);}
+\)(\;)? {if(!COMMENT) printf("\n\t");ECHO;printf("\n");}
+\( ECHO;
+= {if(!COMMENT)printf("\n\t%s is an ASSIGNMENT OPERATOR",yytext);}
+\<= |
+\>= |
+\< |
+== |
+\> {if(!COMMENT) printf("\n\t%s is a RELATIONAL OPERATOR",yytext);}
+%%
+int main(int argc,char **argv)
+{
+if (argc > 1)
+{
+FILE *file;
+file = fopen(argv[1],"r");
+if(!file)
+{
+printf("could not open %s \n",argv[1]);
+exit(0);
+}
+yyin = file;
+}
+yylex();
+printf("\n\n Total No.Of comments are %d",cnt);
+return 0;
+}
+int yywrap()
+{
+return 1;
+}
+
+input.c
+#include<stdio.h>
+int main()
+{
+int a,b;
+}
+
+
+
+//---------------------------------------------------------------------------------------------------------
+
+Experiment No.10
+Title : Study and implementation of parser
+using YACC Tool
+
+Code :
+
+%{
+#include <stdio.h>
+%}
+/* Define tokens */
+%token NUMBER
+%token PLUS
+%token MINUS
+%token MULTIPLY
+%token DIVIDE
+%token LPAREN
+%token RPAREN
+%token END
+/* Define precedence and associativity */
+%left PLUS MINUS
+%left MULTIPLY DIVIDE
+/* Define grammar rules */
+%%
+/* The start symbol */
+calc: expr END { printf("Result: %d\n", $1); }
+/* An expression can be a number, or a combination of expressions */
+expr: NUMBER { $$ = $1; }
+| expr PLUS expr { $$ = $1 + $3; }
+| expr MINUS expr { $$ = $1 - $3; }
+| expr MULTIPLY expr { $$ = $1 * $3; }
+| expr DIVIDE expr { $$ = $1 / $3; }
+| LPAREN expr RPAREN { $$ = $2; }
+%%
+/* Function for handling syntax errors */
+void yyerror(char *s) {
+printf("Syntax error: %s\n", s);
+}
+/* Main function */
+int main() {
+yyparse();
+return 0;
+}
+Output :
+
+
+//---------------------------------------------------------------------------------------------------------
+
